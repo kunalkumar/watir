@@ -2,6 +2,7 @@ module Watir
   class Frame
     include Container
     include PageContainer
+    include XmlParser
     
     # Find the frame denoted by how and what in the container and return its ole_object
     def locate
@@ -55,6 +56,36 @@ module Watir
     def attach_command
       @container.page_container.attach_command + ".frame(#{@how.inspect}, #{@what.inspect})"
     end
+    
+    # return the first element that matches the xpath
+    def element_by_xpath(xpath)
+      temp = elements_by_xpath(xpath)
+      temp = temp[0] if temp
+      return temp
+    end
+    
+    # execute xpath and return an array of elements
+    def elements_by_xpath(xpath)
+      doc = xmlparser_document_object 
+      modifiedXpath = ""
+      selectedElements = Array.new
+      
+      # strip any trailing slash from the xpath expression (as used in watir unit tests)
+      xpath.chop! unless (/\/$/ =~ xpath).nil?
+      
+      doc.xpath(xpath).each do |element|
+        modifiedXpath = element.path
+        temp = element_by_absolute_xpath(modifiedXpath) # temp = a DOM/COM element
+        selectedElements << temp if temp != nil
+      end
+      #puts selectedElements.length
+      if selectedElements.length == 0
+        return nil
+      else
+        return selectedElements
+      end
+    end
+    
     
   end
 end
